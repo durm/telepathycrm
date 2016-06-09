@@ -54,11 +54,15 @@ class Responsible(models.Model):
 
 
 class Named(Desc):
-    name = models.TextField(
+    name = models.CharField(
+        max_length=192,
         null=False,
         verbose_name=_("наименование"),
         blank=False
     )
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         abstract = True
@@ -179,6 +183,107 @@ class EmailDestination(models.Model):
         abstract = True
 
 
+MARKETING_CAMPAIGN_STATUS = (
+    ("Planning", _("Планируется")),
+    ("Active", _("Активна")),
+    ("Inactive", _("Не активна")),
+    ("Complete", _("Завершена")),
+    ("In Queue", _("В очереди")),
+    ("Sending", _("Отсылается")),
+)
+MARKETING_CAMPAIGN_KIND = (
+    ("Telesales", _("Продажи по телефону")),
+    ("Mail", _("Почтовая рассылка")),
+    ("Email", _("Рассылка E-mail")),
+    ("Print", _("Печать")),
+    ("Web", _("Веб-реклама")),
+    ("Radio", _("Радио")),
+    ("Television", _("Телевидение")),
+    ("NewsLetter", _("Информ. бюллетень")),
+)
+CURRENCY = (
+    ("rubles", _("рубли")),
+)
+
+class MarketingCampaign(Named, Responsible, Prototype):
+    opening_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name=_("дата начала")
+    )
+    closing_date = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name=_("дата окончания")
+    )
+    currency = models.CharField(
+        max_length=16,
+        null=True,
+        blank=True,
+        choices=CURRENCY,
+        verbose_name=_("валюта")
+    )
+    budget = models.DecimalField(
+        max_digits=32,
+        decimal_places=8,
+        null=True,
+        blank=True,
+        verbose_name=_("бюджет")
+    )
+    expected_amount = models.DecimalField(
+        max_digits=32,
+        decimal_places=8,
+        null=True,
+        blank=True,
+        verbose_name=_("ожидаемая стоимость")
+    )
+    actual_amount = models.DecimalField(
+        max_digits=32,
+        decimal_places=8,
+        null=True,
+        blank=True,
+        verbose_name=_("фактическая стоимость")
+    )
+    expected_revenue = models.DecimalField(
+        max_digits=32,
+        decimal_places=8,
+        null=True,
+        blank=True,
+        verbose_name=_("ожидаемый доход")
+    )
+    target = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name=_("цель")
+    )
+    status = models.CharField(
+        max_length=16,
+        null=True,
+        blank=True,
+        choices=MARKETING_CAMPAIGN_STATUS,
+        verbose_name=_("статус")
+    )
+    kind = models.CharField(
+        max_length=16,
+        null=True,
+        blank=True,
+        choices=MARKETING_CAMPAIGN_KIND,
+        verbose_name=_("тип")
+    )
+    number_of_impressions = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name=_("количество показов")
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("маркетинговая кампания")
+        verbose_name_plural = _("маркетинговые кампании")
+
+
 class Contractor(Named, GeoDestination, EmailDestination, Responsible, Prototype):
     cite = models.URLField(
         verbose_name=_("сайт"),
@@ -249,7 +354,12 @@ class Contractor(Named, GeoDestination, EmailDestination, Responsible, Prototype
         blank=True,
         verbose_name=_("состоит в")
     )
-    # TODO marketing company
+    marketing_campaign = models.ForeignKey(
+        MarketingCampaign,
+        null=True,
+        blank=True,
+        verbose_name=_("маркетинговая кампания")
+    )
     rating = models.CharField(
         max_length=128,
         blank=True,
@@ -280,8 +390,37 @@ SRC = (
     ('marketing', _("маркетинговая кампания")),
 )
 
+class WithSrc(models.Model):
+    src = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        choices=SRC,
+        verbose_name=_("источник")
+    )
+    src_desc = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name=_("описание источника пред. контакта")
+    )
 
-class Contact(Named, GeoDestination, EmailDestination, Responsible, Prototype):
+    class Meta:
+        abstract = True
+
+
+class Contact(Desc, GeoDestination, EmailDestination, WithSrc, Responsible, Prototype):
+    first_name = models.CharField(
+        max_length=64,
+        null=True,
+        verbose_name=_("имя"),
+        blank=True
+    )
+    last_name = models.CharField(
+        max_length=64,
+        null=False,
+        verbose_name=_("фамилия"),
+        blank=False
+    )
     position = models.CharField(
         max_length=256,
         null=True,
@@ -312,6 +451,16 @@ class Contact(Named, GeoDestination, EmailDestination, Responsible, Prototype):
         blank=True,
         null=True
     )
+    cite = models.URLField(
+        verbose_name=_("сайт"),
+        blank=True,
+        null=True
+    )
+    skype = models.URLField(
+        verbose_name=_("skype"),
+        blank=True,
+        null=True
+    )
     contractor = models.ForeignKey(
         Contractor,
         null=True,
@@ -324,18 +473,153 @@ class Contact(Named, GeoDestination, EmailDestination, Responsible, Prototype):
         blank=True,
         verbose_name=_("руководитель")
     )
-    src = models.CharField(
+    marketing_campaign = models.ForeignKey(
+        MarketingCampaign,
+        null=True,
+        blank=True,
+        verbose_name=_("маркетинговая кампания")
+    )
+
+    def get_fullname(self):
+        return "{} {}".format(self.first_name or "", self.last_name).strip()
+
+    def __str__(self):
+        return self.get_fullname()
+
+    class Meta:
+        verbose_name = _("контакт")
+        verbose_name_plural = _("контакты")
+
+
+PRELIMINARY_CONTACT_STATUS = (
+    ("New", _("Новый")),
+    ("Assigned", _("Назначенный")),
+    ("In Process", _("В процессе")),
+    ("Converted", _("Преобразован")),
+    ("Recycled", _("Повторный")),
+    ("Dead", _("Мёртвый")),
+)
+
+
+class PreliminaryContact(Contact):
+    status = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+        choices=PRELIMINARY_CONTACT_STATUS,
+        verbose_name=_("статус")
+    )
+    status_desc = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_("описание статуса")
+    )
+    amount = models.DecimalField(
+        max_digits=32,
+        decimal_places=8,
+        null=True,
+        blank=True,
+        verbose_name=_("сумма сделки")
+    )
+    transmitted_from = models.CharField(
         max_length=128,
         null=True,
         blank=True,
-        choices=SRC,
-        verbose_name=_("источник")
+        verbose_name=_("передан от")
     )
-    # TODO marketing company
+
+    class Meta:
+        verbose_name = _("предварительный контакт")
+        verbose_name_plural = _("предварительные контакты")
+
+
+STAGE = (
+    ("Account is liquidated", _("Счёт оплачен")),
+    ("Assembling", _("Сборка заказа / Счёт оплачен")),
+    ("Assembling1", _("Сборка заказа / Счёт частично оплачен")),
+    ("Assembling2", _("Сборка заказа / Счёт не оплачен")),
+    ("Shipping0", _("Частичная готовность к отгрузке")),
+    ("Shipping", _("Готовность к отгрузке")),
+    ("Shipping1", _("Заказ отгружен / Счёт частично оплачен")),
+    ("Shipping2", _("Заказ отгружен / Счёт не оплачен")),
+    ("Prospecting", _("Разведка")),
+    ("Qualification", _("Оценка")),
+    ("Needs Analysis", _("Анализ потребностей")),
+    ("Value Proposition", _("Предложение ценности")),
+    ("Id. Decision Makers", _("Опред. лиц, принимающих решения")),
+    ("Perception Analysis", _("Анализ реакции")),
+    ("Proposal/Price Quote", _("Ком. предложение /Выставление счёта")),
+    ("Negotiation/Review", _("Согласование / Пересмотр")),
+    ("Closed Won", _("Закрыто с успехом / Товар отгружен")),
+    ("Closed Lost", _("Закрыто с потерями / Товар возвращён")),
+)
+DEAL_KIND = (
+    ("existing", _("существующий бизнес")),
+    ("new", _("новый бизнес")),
+)
+
+
+class Deal(Named, WithSrc, Responsible, Prototype):
+    currency = models.CharField(
+        max_length=16,
+        null=True,
+        blank=True,
+        choices=CURRENCY,
+        verbose_name=_("валюта")
+    )
+    amount = models.DecimalField(
+        max_digits=32,
+        decimal_places=8,
+        null=False,
+        blank=False,
+        verbose_name=_("сумма сделки")
+    )
+    stage = models.CharField(
+        max_length=32,
+        null=False,
+        blank=False,
+        choices=STAGE,
+        verbose_name=_("стадия продаж")
+    )
+    posibility = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name=_("вероятность (%)")
+    )
+    next_step = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        verbose_name=_("следующий шаг")
+    )
+    contractor = models.ForeignKey(
+        Contractor,
+        null=False,
+        blank=False,
+        verbose_name=_("контрагент")
+    )
+    closing_date = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name=_("ожидаемая дата закрытия")
+    )
+    kind = models.CharField(
+        max_length=16,
+        null=True,
+        blank=True,
+        choices=DEAL_KIND,
+        verbose_name=_("тип")
+    )
+    marketing_campaign = models.ForeignKey(
+        MarketingCampaign,
+        null=True,
+        blank=True,
+        verbose_name=_("маркетинговая кампания")
+    )
 
     def __str__(self):
         return self.name
 
     class Meta:
-        verbose_name = _("контакт")
-        verbose_name_plural = _("контакты")
+        verbose_name = _("сделка")
+        verbose_name_plural = _("сделки")
