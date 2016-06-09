@@ -1,8 +1,7 @@
 from django.contrib import admin
-from .models import Contractor, EmailToContractor, Address
+from .models import Contractor, EmailToContractor, Address, Contact
 from django.forms import ModelForm
 from django.utils.translation import ugettext_lazy as _
-
 
 class ContractorForm(ModelForm):
     class Meta:
@@ -85,7 +84,11 @@ class EmailToContractorAdmin(PrototypeAdmin):
     #    return {}
     pass
 
+class ContactAdmin(PrototypeAdmin):
+    pass
+
 
 admin.site.register(Address, AddressAdmin)
 admin.site.register(EmailToContractor, EmailToContractorAdmin)
 admin.site.register(Contractor, ContractorAdmin)
+admin.site.register(Contact, ContactAdmin)

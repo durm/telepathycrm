@@ -41,6 +41,18 @@ class Desc(models.Model):
         abstract = True
 
 
+class Responsible(models.Model):
+    responsible = models.ForeignKey(
+        User,
+        blank=True,
+        null=True,
+        verbose_name=_("ответственный")
+    )
+
+    class Meta:
+        abstract = True
+
+
 class Named(Desc):
     name = models.TextField(
         null=False,
@@ -50,6 +62,7 @@ class Named(Desc):
 
     class Meta:
         abstract = True
+
 
 class Address(Desc, Prototype):
     street = models.TextField(
@@ -103,6 +116,25 @@ class Address(Desc, Prototype):
         verbose_name_plural = _("адреса")
 
 
+class GeoDestination(models.Model):
+    addresses = models.ManyToManyField(
+        Address,
+        verbose_name=_("адреса"),
+        related_name="+"
+    )
+    primary_address = models.ForeignKey(
+        Address,
+        verbose_name=_("адрес"),
+        related_name="+",
+        blank=True,
+        null=True,
+        help_text=_("перед тем как задать главный адрес добавьте его и перезагрузите страницу.")
+    )
+
+    class Meta:
+        abstract = True
+
+
 class EmailToContractor(Prototype):
     email = models.EmailField(
         null=False,
@@ -128,7 +160,26 @@ class EmailToContractor(Prototype):
         verbose_name_plural = _("эл. адреса")
 
 
-class Contractor(Named, Prototype):
+class EmailDestination(models.Model):
+    emails = models.ManyToManyField(
+        EmailToContractor,
+        verbose_name=_("эл. адреса"),
+        related_name="+"
+    )
+    primary_email = models.ForeignKey(
+        EmailToContractor,
+        verbose_name=_("эл. адрес"),
+        related_name="+",
+        blank=True,
+        null=True,
+        help_text=_("перед тем как задать главный email добавьте его и перезагрузите страницу.")
+    )
+
+    class Meta:
+        abstract = True
+
+
+class Contractor(Named, GeoDestination, EmailDestination, Responsible, Prototype):
     cite = models.URLField(
         verbose_name=_("сайт"),
         blank=True,
@@ -145,32 +196,6 @@ class Contractor(Named, Prototype):
         verbose_name=_("факс"),
         blank=True,
         null=True
-    )
-    emails = models.ManyToManyField(
-        EmailToContractor,
-        verbose_name=_("эл. адреса"),
-        related_name="+"
-    )
-    primary_email = models.ForeignKey(
-        EmailToContractor,
-        verbose_name=_("эл. адрес"),
-        related_name="+",
-        blank=True,
-        null=True,
-        help_text=_("перед тем как задать главный email добавьте его и перезагрузите страницу.")
-    )
-    addresses = models.ManyToManyField(
-        Address,
-        verbose_name=_("адреса"),
-        related_name="+"
-    )
-    primary_address = models.ForeignKey(
-        Address,
-        verbose_name=_("адрес"),
-        related_name="+",
-        blank=True,
-        null=True,
-        help_text=_("перед тем как задать главный адрес добавьте его и перезагрузите страницу.")
     )
     kind = models.CharField(
         max_length=24,
@@ -231,12 +256,6 @@ class Contractor(Named, Prototype):
         null=True,
         verbose_name=_("рейтинг")
     )
-    responsible = models.ForeignKey(
-        User,
-        blank=True,
-        null=True,
-        verbose_name=_("Ответственный")
-    )
 
     def __str__(self):
         return self.name
@@ -244,3 +263,79 @@ class Contractor(Named, Prototype):
     class Meta:
         verbose_name = _("контрагент")
         verbose_name_plural = _("контрагенты")
+
+
+SRC = (
+    ('phone', _("холодный прозвон")),
+    ('existing_client', _("существующий клиент")),
+    ('own', _("собственный")),
+    ('employee', _("сотрудник")),
+    ('pr', _("pr-деятельность")),
+    ('direct_link', _("прямая ссылка")),
+    ('conference', _("конференция")),
+    ('special_galery', _("спец. выставка")),
+    ('web', _("сайт")),
+    ('talk', _("разговор")),
+    ('email', _("Email")),
+    ('marketing', _("маркетинговая кампания")),
+)
+
+
+class Contact(Named, GeoDestination, EmailDestination, Responsible, Prototype):
+    position = models.CharField(
+        max_length=256,
+        null=True,
+        blank=True,
+        verbose_name=_("должность")
+    )
+    department = models.CharField(
+        max_length=256,
+        null=True,
+        blank=True,
+        verbose_name=_("отдел")
+    )
+    phone_work = models.CharField(
+        max_length=128,
+        verbose_name=_("телефон (раб.)"),
+        null=True,
+        blank=True
+    )
+    phone_mobile = models.CharField(
+        max_length=128,
+        verbose_name=_("телефон (моб.)"),
+        null=True,
+        blank=True
+    )
+    fax = models.CharField(
+        max_length=128,
+        verbose_name=_("факс"),
+        blank=True,
+        null=True
+    )
+    contractor = models.ForeignKey(
+        Contractor,
+        null=True,
+        blank=True,
+        verbose_name=_("контрагент")
+    )
+    head = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        verbose_name=_("руководитель")
+    )
+    src = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        choices=SRC,
+        verbose_name=_("источник")
+    )
+    # TODO marketing company
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("контакт")
+        verbose_name_plural = _("контакты")
