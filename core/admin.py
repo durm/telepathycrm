@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Contractor, EmailToContractor, Address, Contact, PreliminaryContact, MarketingCampaign, Deal
+from .models import Contractor, EmailToContractor, Address, Contact, PreliminaryContact, MarketingCampaign, Deal,\
+    Circulation, PhoneCall, Meeting, Task, Note, Document, Project
 from django.forms import ModelForm
 from django.utils.translation import ugettext_lazy as _
 
@@ -101,6 +102,34 @@ class DealAdmin(PrototypeAdmin):
     pass
 
 
+class CirculationAdmin(PrototypeAdmin):
+    pass
+
+
+class PhoneCallAdmin(PrototypeAdmin):
+    pass
+
+
+class MeetingAdmin(PrototypeAdmin):
+    pass
+
+
+class TaskAdmin(PrototypeAdmin):
+    pass
+
+
+class NoteAdmin(PrototypeAdmin):
+    pass
+
+
+class DocumentAdmin(PrototypeAdmin):
+    pass
+
+
+class ProjectAdmin(PrototypeAdmin):
+    pass
+
+
 admin.site.register(Address, AddressAdmin)
 admin.site.register(EmailToContractor, EmailToContractorAdmin)
 admin.site.register(Contractor, ContractorAdmin)
@@ -108,3 +137,10 @@ admin.site.register(Contact, ContactAdmin)
 admin.site.register(PreliminaryContact, PreliminaryContactAdmin)
 admin.site.register(MarketingCampaign, MarketingCampaignAdmin)
 admin.site.register(Deal, DealAdmin)
+admin.site.register(Circulation, CirculationAdmin)
+admin.site.register(PhoneCall, PhoneCallAdmin)
+admin.site.register(Meeting, MeetingAdmin)
+admin.site.register(Task, TaskAdmin)
+admin.site.register(Note, NoteAdmin)
+admin.site.register(Document, DocumentAdmin)
+admin.site.register(Project, ProjectAdmin)

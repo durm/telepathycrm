@@ -623,3 +623,333 @@ class Deal(Named, WithSrc, Responsible, Prototype):
     class Meta:
         verbose_name = _("сделка")
         verbose_name_plural = _("сделки")
+
+
+PRIORITY = (
+    (0, _("Низкий")),
+    (1, _("Средний")),
+    (2, _("Высокий")),
+)
+
+CIRCULATION_STATUS = (
+    ("Open_New", _("Новое")),
+    ("Open_Assigned", _("Назначенное")),
+    ("Closed_Closed", _("Закрытое")),
+    ("Open_Pending Input", _("Ожидание решения")),
+    ("Closed_Rejected", _("Отклонённое")),
+    ("Closed_Duplicate", _("Продублированное")),
+)
+
+CIRCULATION_KIND = (
+    ("Administration", _("Административное")),
+    ("Product", _("Продукция")),
+    ("User", _("Пользовательское")),
+)
+
+class Circulation(Named, Responsible, Prototype):
+    priority = models.IntegerField(
+        choices=PRIORITY,
+        null=False,
+        blank=False,
+        verbose_name=_("приоритет")
+    )
+    status = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+        choices=CIRCULATION_STATUS,
+        verbose_name=_("статус")
+    )
+    contractor = models.ForeignKey(
+        Contractor,
+        null=False,
+        blank=False,
+        verbose_name=_("контрагент")
+    )
+    kind = models.CharField(
+        max_length=32,
+        null=False,
+        blank=False,
+        choices=CIRCULATION_KIND,
+        verbose_name=_("тип")
+    )
+    resolution = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name=_("резолюция")
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("обращение")
+        verbose_name_plural = _("обращения")
+
+
+class StartAndDuration(models.Model):
+    starting_datetime = models.DateTimeField(
+        null=False,
+        blank=False,
+        verbose_name=_("дата и время")
+    )
+    duration = models.IntegerField(
+        blank=False,
+        null=False,
+        verbose_name=_("продолжительность")
+    )
+
+    class Meta:
+        abstract = True
+
+
+PHONE_CALL = (
+    ("inbound", _("входящий")),
+    ("outbound", _("исходящий")),
+)
+
+PHONE_STATUS = (
+    ("planned", _("запланирован")),
+    ("held", _("состоялся")),
+    ("not held", _("не состоялся")),
+)
+
+
+class RelatedTo(models.Model):
+    # TODO related to
+
+    class Meta:
+        abstract = True
+
+
+class Relation(Named, RelatedTo, Responsible, Prototype):
+
+    class Meta:
+        abstract = True
+
+
+class PhoneCall(Relation, StartAndDuration):
+    kind = models.CharField(
+        max_length=16,
+        null=False,
+        blank=False,
+        choices=PHONE_CALL,
+        verbose_name=_("тип")
+    )
+    status = models.CharField(
+        max_length=32,
+        null=False,
+        blank=False,
+        choices=PHONE_STATUS,
+        verbose_name=_("статус")
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("звонок")
+        verbose_name_plural = _("звонки")
+
+
+MEETING_STATUS = PHONE_STATUS
+
+
+class Meeting(Relation, StartAndDuration):
+    status = models.CharField(
+        max_length=32,
+        null=False,
+        blank=False,
+        choices=MEETING_STATUS,
+        verbose_name=_("статус")
+    )
+    place = models.CharField(
+        max_length=256,
+        null=True,
+        blank=True,
+        verbose_name=_("место встречи")
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("встреча")
+        verbose_name_plural = _("встречи")
+
+
+TASK_STATUS = (
+    ("Not Started", _("Не начата")),
+    ("In Progress", _("В процессе")),
+    ("Completed", _("Завершена")),
+    ("Pending Input", _("Ожидание решения")),
+    ("Deferred", _("Отложена")),
+)
+
+
+class Task(Relation, StartAndDuration):
+    priority = models.IntegerField(
+        choices=PRIORITY,
+        null=False,
+        blank=False,
+        verbose_name=_("приоритет")
+    )
+    status = models.CharField(
+        max_length=32,
+        null=False,
+        blank=False,
+        choices=TASK_STATUS,
+        verbose_name=_("статус")
+    )
+    contact = models.ForeignKey(
+        Contact,
+        null=True,
+        blank=True,
+        verbose_name=_("контактное лицо")
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("задача")
+        verbose_name_plural = _("задачи")
+
+
+class Note(Relation):
+    contact = models.ForeignKey(
+        Contact,
+        null=True,
+        blank=True,
+        verbose_name=_("контактное лицо")
+    )
+    attach = models.FileField(
+        verbose_name=_("вложение"),
+        upload_to="notes",
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("заметка")
+        verbose_name_plural = _("заметки")
+
+
+DOCUMENT_TYPE = (
+    ("mailmerge", _("Слияние")),
+    ("eula", _("Пользовательское соглашение (EULA)")),
+    ("nda", _("Соглашение о неразглашении (NDA)")),
+    ("license", _("Лицензионное соглашение")),
+)
+
+DOCUMENT_STATUS = (
+    ("Active", _("Активен")),
+    ("Draft", _("Черновик")),
+    ("FAQ", _("ЧаВо")),
+    ("Expired", _("Просрочен")),
+    ("Under Review", _("На рассмотрении")),
+    ("Pending", _("Ожидание решения")),
+)
+
+
+class Document(Named, Responsible, Prototype):
+    attach = models.FileField(
+        verbose_name=_("вложение"),
+        upload_to="documents",
+        null=False,
+        blank=False,
+    )
+    version = models.IntegerField(
+        null=False,
+        blank=False,
+        verbose_name=_("версия"),
+        default=1
+    )
+    kind = models.CharField(
+        max_length=16,
+        null=True,
+        blank=True,
+        choices=DOCUMENT_TYPE,
+        verbose_name=_("тип документа")
+    )
+    status = models.CharField(
+        max_length=16,
+        null=False,
+        blank=False,
+        choices=DOCUMENT_STATUS,
+        verbose_name=_("статус")
+    )
+    is_template = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name=_("шаблон")
+    )
+    related_documents = models.ManyToManyField(
+        'self',
+        blank=True,
+        verbose_name=_("связанный документ")
+    )
+    publication_date = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name=_("дата публикации")
+    )
+    expire_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name=_("актуален до")
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("документ")
+        verbose_name_plural = _("документы")
+
+
+PROJECT_STATUS = (
+    ("Draft", _("Черновик")),
+    ("In Review", _("На рассмотрении")),
+    ("Published", _("Опубликован")),
+)
+
+
+class Project(Named, Responsible, Prototype):
+    starting_date = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name=_("дата начала")
+    )
+    finishing_date = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name=_("дата окончания")
+    )
+    priority = models.IntegerField(
+        choices=PRIORITY,
+        null=False,
+        blank=False,
+        verbose_name=_("приоритет")
+    )
+    status = models.CharField(
+        max_length=16,
+        null=False,
+        blank=False,
+        choices=PROJECT_STATUS,
+        verbose_name=_("статус")
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("проект")
+        verbose_name_plural = _("проекты")
+
+
+# TODO addresses lists and emails
