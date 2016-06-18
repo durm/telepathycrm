@@ -825,7 +825,7 @@ class Note(Relation):
     )
     attach = models.FileField(
         verbose_name=_("вложение"),
-        upload_to="notes",
+        upload_to="attachs/notes",
         null=True,
         blank=True
     )
@@ -858,7 +858,7 @@ DOCUMENT_STATUS = (
 class Document(Named, Responsible, Prototype):
     attach = models.FileField(
         verbose_name=_("вложение"),
-        upload_to="documents",
+        upload_to="attachs/documents",
         null=False,
         blank=False,
     )

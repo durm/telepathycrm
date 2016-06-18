@@ -25,7 +25,7 @@ SECRET_KEY = '#u+=bh2h#sjp^m+1f!7s$k7f01&js4aj-@0qmy=ez3waog#a^9'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["telepathycrm.alexkorotkov.ru"]
 
 
 # Application definition
@@ -74,13 +74,11 @@ WSGI_APPLICATION = 'telepathycrm.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
-
+from telepathycrm.dbconf import DBCONF
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+    'default': DBCONF,
 }
+### END DB BLOCK
 
 
 # Password validation
