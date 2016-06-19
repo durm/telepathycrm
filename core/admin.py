@@ -4,26 +4,28 @@ from .models import Contractor, EmailToContractor, Address, Contact, Preliminary
 from django.forms import ModelForm
 from django.utils.translation import ugettext_lazy as _
 
-class ContractorForm(ModelForm):
-    class Meta:
-        fields = '__all__'
-        model = Contractor
+PROTOFIELDS = ("created_by", "created_at", "updated_by", "updated_at")
 
-    def __init__(self, *args, **kwargs):
-        super(ModelForm, self).__init__(*args, **kwargs)
+PROTOTYPE_FIELDSET = (
+    None,
+    {
+        "fields": (
+            "created_by", "created_at", "updated_by", "updated_at"
+        )
+    }
+)
 
-        """
-        self.fields['primary_email'].queryset = \
-            Contractor.objects.get(id=self.instance.id).emails.all() or \
-            EmailToContractor.objects.none()
-        self.fields['primary_address'].queryset = \
-            Contractor.objects.get(id=self.instance.id).addresses.all() or \
-            Address.objects.none()
-        """
-
+RESPONSIBLE_FIELDSET = (
+    None,
+    {
+        "fields": (
+            "responsible",
+        )
+    }
+)
 
 class PrototypeAdmin(admin.ModelAdmin):
-    readonly_fields = ("created_by", "created_at", "updated_by", "updated_at")
+    readonly_fields = PROTOFIELDS
 
     def save_model(self, request, obj, form, change):
         if getattr(obj, 'id', None) is None:
@@ -33,9 +35,6 @@ class PrototypeAdmin(admin.ModelAdmin):
 
 
 class ContractorAdmin(PrototypeAdmin):
-    form = ContractorForm
-    readonly_fields = ("created_by", "created_at", "updated_by", "updated_at")
-
     fieldsets = (
         (
             None,
@@ -55,39 +54,88 @@ class ContractorAdmin(PrototypeAdmin):
                 )
             }
         ),
-        (
-            None,
-            {
-                "fields": (
-                    "created_by", "created_at", "updated_by", "updated_at"
-                )
-            }
-        )
+        PROTOTYPE_FIELDSET
     )
 
 
-
-    filter_horizontal = ('emails', "addresses",)
-
-
 class AddressAdmin(PrototypeAdmin):
-    readonly_fields = ("created_by", "created_at", "updated_by", "updated_at")
-    fields = (
-        "desc", "zipcode", "country", "region", "city", "street",
-        "created_by", "created_at", "updated_by", "updated_at")
+    params = (
+        "desc", "zipcode", "country", "region",
+        "city", "street"
+    )
+    search_fields = params
+    list_display = ("address_view", "country", "region", "city")
+    list_filter = ("country", "region", "city")
+    def address_view(self, obj):
+        return obj
+
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": params
+            }
+        ),
+        PROTOTYPE_FIELDSET
+    )
 
 
 class EmailToContractorAdmin(PrototypeAdmin):
-    #def get_model_perms(self, request):
-    #    """
-    #    Return empty perms dict thus hiding the model from admin index.
-    #    """
-    #    return {}
     pass
 
 
 class ContactAdmin(PrototypeAdmin):
-    pass
+    def contact_view(self, obj):
+        return obj.get_fullname()
+    params = ("department", "position", "phone_work", "phone_mobile", "skype")
+    list_display = ("contact_view", ) + params
+    search_fields = ("first_name", "last_name",) + params
+    fieldsets = (
+        (
+            _("личные данные"),
+            {
+                "fields": (
+                    "first_name", "last_name", "department", "position", "head",
+                    "phone_work", "phone_mobile", "fax", "cite", "skype", "desc"
+                )
+            }
+        ),
+        (
+            None,
+            {
+                "fields": (
+                    "contractor", "marketing_campaign"
+                )
+            }
+        ),
+        (
+            None,
+            {
+                "fields": (
+                    "emails", "primary_email"
+                )
+            }
+        ),
+        (
+            None,
+            {
+                "fields": (
+                    "addresses", "primary_address"
+                )
+            }
+        ),
+        (
+            None,
+            {
+                "fields": (
+                    "src", "src_desc"
+                )
+            }
+        ),
+        RESPONSIBLE_FIELDSET,
+        PROTOTYPE_FIELDSET
+    )
+
 
 
 class PreliminaryContactAdmin(PrototypeAdmin):
@@ -111,7 +159,23 @@ class PhoneCallAdmin(PrototypeAdmin):
 
 
 class MeetingAdmin(PrototypeAdmin):
-    pass
+    list_display = ("name", "place", "status", "starting_datetime", "finishing_datetime", )
+    search_fields = ("name", "desc", "place")
+    list_filter = ("status", "responsible")
+
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "name", "desc", "status", "place",
+                    "starting_datetime", "finishing_datetime",
+                )
+            }
+        ),
+        RESPONSIBLE_FIELDSET,
+        PROTOTYPE_FIELDSET
+    )
 
 
 class TaskAdmin(PrototypeAdmin):

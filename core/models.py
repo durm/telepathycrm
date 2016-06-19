@@ -456,7 +456,8 @@ class Contact(Desc, GeoDestination, EmailDestination, WithSrc, Responsible, Prot
         blank=True,
         null=True
     )
-    skype = models.URLField(
+    skype = models.CharField(
+        max_length=64,
         verbose_name=_("skype"),
         blank=True,
         null=True
@@ -691,12 +692,12 @@ class StartAndDuration(models.Model):
     starting_datetime = models.DateTimeField(
         null=False,
         blank=False,
-        verbose_name=_("дата и время")
+        verbose_name=_("время начала")
     )
-    duration = models.IntegerField(
-        blank=False,
+    finishing_datetime = models.DateTimeField(
         null=False,
-        verbose_name=_("продолжительность")
+        blank=False,
+        verbose_name=_("время окончания")
     )
 
     class Meta:
